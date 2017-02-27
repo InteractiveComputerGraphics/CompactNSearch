@@ -4,7 +4,6 @@
 #define __DATA_STRUCTURES_H__
 
 #include "Config.h"
-#include <array>
 #include <atomic>
 #include <vector>
 
