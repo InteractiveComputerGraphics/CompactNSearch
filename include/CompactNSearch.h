@@ -110,13 +110,13 @@ public:
 	/*
 	* @returns Returns the radius in which point neighbors are searched.
 	*/
-	double radius() const { return std::sqrt(m_r2); }
+	Real radius() const { return std::sqrt(m_r2); }
 
 	/**
 	* Sets the radius in which point point neighbors are searched.
 	* @param r Search radius.
 	*/
-	void set_radius(double r) 
+	void set_radius(Real r) 
 	{ 
 		m_r2 = r * r; 
 		m_inv_cell_size = 1.0 / r;

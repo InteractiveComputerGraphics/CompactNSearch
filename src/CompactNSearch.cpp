@@ -31,11 +31,11 @@ z_value(HashKey const& key)
 
 
 NeighborhoodSearch::NeighborhoodSearch(Real r, bool erase_empty_cells)
-	: m_r2(r * r), m_inv_cell_size(1.0 / r)
+	: m_r2(r * r), m_inv_cell_size(static_cast<Real>(1.0 / r))
 	, m_erase_empty_cells(erase_empty_cells)
 	, m_initialized(false)
 {
-	if (r <=  0.0)
+	if (r <= static_cast<Real>(0.0))
 	{
 		std::cerr << "WARNING: Neighborhood search may not be initialized with a zero or negative"
 			<< " search radius. This may lead to unexpected behavior." << std::endl;
