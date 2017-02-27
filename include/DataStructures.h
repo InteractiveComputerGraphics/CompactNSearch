@@ -4,7 +4,7 @@
 #define __DATA_STRUCTURES_H__
 
 #include "Config.h"
-
+#include <array>
 #include <atomic>
 #include <vector>
 
@@ -99,7 +99,7 @@ struct SpatialHasher
 class Spinlock
 {
 public:
-
+	
 	void lock()
 	{
 		while (m_lock.test_and_set(std::memory_order_acquire));
@@ -109,15 +109,15 @@ public:
 	{
 		m_lock.clear(std::memory_order_release);
 	}
-
-	Spinlock() = default;
+	Spinlock::Spinlock(){ m_lock.clear(); }
 	Spinlock(Spinlock const& other) {};
 	Spinlock& operator=(Spinlock const& other) { return *this; }
 
 
 private:
 
-	std::atomic_flag m_lock = ATOMIC_FLAG_INIT;
+	std::atomic_flag m_lock;
+	
 };
 }
 
