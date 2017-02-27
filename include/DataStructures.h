@@ -25,8 +25,10 @@ struct HashKey
 {
 	HashKey() = default;
 	HashKey(int i, int j, int k)
-		: k{i, j, k}
 	{
+		this->k[0] = i;
+		this->k[1] = j;
+		this->k[2] = k;
 	}
 
 	HashKey& operator=(HashKey const& other)
