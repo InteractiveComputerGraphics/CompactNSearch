@@ -41,12 +41,12 @@ for (int i = 0; i < ps.n_points(); ++i)
 {
 	for (int j = 0; j < ps.n_neighbors(i); ++j)
 	{
-    	// Return PointID of the jth neighbor of the ith particle.
-	    PointID const& pid = ps.neighbor(i, j);
+    	// Return PointID of the jth neighbor of the ith particle in the 0th point set.
+	    PointID const& pid = ps.neighbor(0, i, j);
 	    // ...
-	    // Do whatever you want with the point id. The id contains two indices. 
+	    // Do whatever you want with the point id. The id contains two indices.
 	    // The first field pid.point_set_id represents the unique point set id returnd by add_point_set.
-	    // The second field pid.point_id stands for the index of the neighboring particle within 
+	    // The second field pid.point_id stands for the index of the neighboring particle within
 	    // the containing point set.
 	    // ...
 	}
@@ -57,7 +57,7 @@ Besides the basic functionality the library offers to compute a rule for reorder
 ```c++
 nsearch.z_sort();
 ```
-Please note that the actual reordering must invoked by the user by
+Please note that the actual reordering must be invoked by the user by
 ```c++
 ps.sort_field(positions.data());
 ```
@@ -65,11 +65,18 @@ Assuming that there is additional information stored per-point (e.g. velocity, c
 
 Another self-explaining (benchmark) [demo](demo/main.cpp) is contained in the project.
 
+## Activation Table
+
+When maintaining multiple it is sometimes desired that only certain point sets can find points from other point sets. Therefore an activation table is implemented where the user can specify whether a point set i searches points in another point set j. When nothing else is specified all point sets will search points in all other point sets. The activation table can be modified with e.g.
+```c++
+nsearch.set_active(i, j, false)
+```
+
 ## References
 
 * [IABT11] M. Ihmsen, N. Akinci, M. Becker and M. Teschner, 2011. "A Parallel SPH Implementation on Multi-Core CPUs", Computer Graphics Forum 30, 1, 99-112.
 * [BK15] J. Bender and D. Koschier 2015. "Divergence-Free Smoothed Particle Hydrodynamics", ACM SIGGRAPH / Eurographics Symposium on Computer Animation, 1-9
-* [BK16] J. Bender and D. Koschier, 2016. "Divergence-Free SPH for Incompressible and Viscous Fluids", IEEE Transactions on Visualization and Computer Graphics.
+* [BK17] J. Bender and D. Koschier, 2017. "Divergence-Free SPH for Incompressible and Viscous Fluids", IEEE Transactions on Visualization and Computer Graphics.
 
 [PBD]: <https://github.com/InteractiveComputerGraphics/PositionBasedDynamics>
 [SPlisHSPlasH]: <https://github.com/InteractiveComputerGraphics/SPlisHSPlasH>
