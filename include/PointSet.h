@@ -1,6 +1,4 @@
-
-#ifndef __POINT_SET_H__
-#define __POINT_SET_H__
+#pragma once
 
 #include <Config.h>
 #include <iostream>
@@ -34,12 +32,11 @@ public:
 		m_x = other.m_x;
 		m_n = other.m_n;
 		m_dynamic = other.m_dynamic;
-		m_search_neighbors = other.m_search_neighbors;
 
 		m_neighbors = other.m_neighbors;
 		m_keys = other.m_keys;
 		m_old_keys = other.m_old_keys;
-		m_locks.resize(other.m_locks.size());
+
 		m_sort_table = other.m_sort_table;
 
 		return *this;
@@ -48,23 +45,25 @@ public:
 	/**
 	* Returns the number of neighbors of point i in the given point set.
 	* @param i Point index.
-	* @returns Number of points neighboring point i.
+	* @returns Number of points neighboring point i in point set point_set.
 	*/
-	std::size_t n_neighbors(unsigned int i) const 
+	std::size_t n_neighbors(unsigned int point_set, unsigned int i) const 
 	{
-		return static_cast<unsigned int>(m_neighbors[i].size());
+		return static_cast<unsigned int>(m_neighbors[point_set][i].size());
 	}
 
 	/**
 	* Fetches id pair of kth neighbor of point i in the given point set.
+	* @param point_set Point set index of other point set where neighbors have been searched.
 	* @param i Point index for which the neighbor id should be returned.
 	* @param k Represents kth neighbor of point i.
-	* @returns Number of points neighboring point i.
+	* @returns Index of neighboring point i in point set point_set.
 	*/
-	PointID const& neighbor(unsigned int i, unsigned int k) const 
+	unsigned int neighbor(unsigned int point_set, unsigned int i, unsigned int k) const 
 	{
-		return m_neighbors[i][k];
+		return m_neighbors[point_set][i][k];
 	}
+
 
 	/**
 	* Returns the number of points contained in the point set.
@@ -82,16 +81,6 @@ public:
 	void set_dynamic(bool v) { m_dynamic = v; }
 
 	/**
-	* Returns true, if neighborhood information will be generated for the given point set.
-	*/
-	bool is_neighborsearch_enabled() const { return m_search_neighbors; }
-
-	/**
-	* Enables or disables, if neighborhood information will be generated for the given point set.
-	*/
-	void enable_neighborsearch(bool v) { m_search_neighbors = v; }
-
-	/**
 	* Reorders an array according to a previously generated sort table by invocation of the method
 	* "z_sort" of class "NeighborhoodSearch". Please note that the method "z_sort" of class
 	* "Neighborhood search" has to be called beforehand.
@@ -102,13 +91,12 @@ public:
 private:
 
 	friend NeighborhoodSearch;
-	PointSet(Real const* x, std::size_t n, bool dynamic, bool search_neighbors)
+	PointSet(Real const* x, std::size_t n, bool dynamic)
 		: m_x(x), m_n(n), m_dynamic(dynamic), m_neighbors(n)
 		, m_keys(n, {
 		std::numeric_limits<int>::lowest(),
 		std::numeric_limits<int>::lowest(),
 		std::numeric_limits<int>::lowest() })
-		, m_search_neighbors(search_neighbors)
 	{
 		m_old_keys = m_keys;
 	}
@@ -135,11 +123,11 @@ private:
 	Real const* m_x;
 	std::size_t m_n;
 	bool m_dynamic;
-	bool m_search_neighbors;
 
-	std::vector<std::vector<PointID>> m_neighbors;
+	std::vector<std::vector<std::vector<unsigned int>>> m_neighbors;
+
 	std::vector<HashKey> m_keys, m_old_keys;
-	std::vector<Spinlock> m_locks;
+	std::vector<std::vector<Spinlock>> m_locks;
 	std::vector<unsigned int> m_sort_table;
 };
 
@@ -163,6 +151,4 @@ PointSet::sort_field(T* lst) const
 		[&](int i){ return tmp[i]; });
 }
 }
-
-#endif // __POINT_SET_H__
 

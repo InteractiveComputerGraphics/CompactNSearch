@@ -31,7 +31,7 @@ z_value(HashKey const& key)
 
 
 NeighborhoodSearch::NeighborhoodSearch(Real r, bool erase_empty_cells)
-	: m_r2(r * r), m_inv_cell_size(1.0 / r)
+	: m_r2(r * r), m_inv_cell_size(static_cast<Real>(1.0 / r))
 	, m_erase_empty_cells(erase_empty_cells)
 	, m_initialized(false)
 {
@@ -86,21 +86,28 @@ NeighborhoodSearch::init()
 	for (unsigned int j = 0; j < m_point_sets.size(); ++j)
 	{
 		PointSet& d = m_point_sets[j];
-		d.m_locks.resize(d.n_points());
+		d.m_locks.resize(m_point_sets.size());
+		for (auto& l : d.m_locks)
+			l.resize(d.n_points());
 		for (unsigned int i = 0; i < d.n_points(); i++)
 		{
 			HashKey const& key = cell_index(d.point(i));
 			d.m_keys[i] = d.m_old_keys[i] = key;
+
 			auto it = m_map.find(key);
 			if (it == m_map.end())
 			{
 				m_entries.push_back({{ j, i }});
+				if (m_activation_table.is_searching_neighbors(j))
+					m_entries.back().n_searching_points++;
 				temp_keys.push_back(key);
 				m_map[key] = static_cast<unsigned int>(m_entries.size() - 1);
 			}
 			else
 			{
 				m_entries[it->second].add({j, i});
+				if (m_activation_table.is_searching_neighbors(j))
+					m_entries[it->second].n_searching_points++;
 			}
 		}
 	}
@@ -116,12 +123,49 @@ NeighborhoodSearch::init()
 
 
 void
-NeighborhoodSearch::increase_point_set_size(unsigned int index, Real const* x, std::size_t size)
+NeighborhoodSearch::resize_point_set(unsigned int index, Real const* x, std::size_t size)
 {
 	PointSet& point_set = m_point_sets[index];
 	std::size_t old_size = point_set.n_points();
 
-	// Insert new entries.
+	if (!m_initialized)
+	{
+		throw NeighborhoodSearchNotInitialized{};
+	}
+
+	// Delete old entries. (Shrink)
+	if (old_size > size)
+	{
+		std::vector<unsigned int> to_delete;
+		if (m_erase_empty_cells)
+		{
+			to_delete.reserve(m_entries.size());
+		}
+
+		for (unsigned int i = static_cast<unsigned int>(size); i < old_size; i++)
+		{
+			HashKey const& key = point_set.m_keys[i];
+			auto it = m_map.find(key);
+			m_entries[it->second].erase({ index, i });
+			if (m_activation_table.is_searching_neighbors(index))
+				m_entries[it->second].n_searching_points--;
+			if (m_erase_empty_cells)
+			{
+				if (m_entries[it->second].n_indices() == 0)
+				{
+					to_delete.push_back(it->second);
+				}
+			}
+		}
+		if (m_erase_empty_cells)
+		{
+			erase_empty_entries(to_delete);
+		}
+	}
+
+	point_set.resize(x, size);
+
+	// Insert new entries. (Grow)
 	for (unsigned int i = static_cast<unsigned int>(old_size); i < point_set.n_points(); i++)
 	{
 		HashKey key = cell_index(point_set.point(i));
@@ -129,21 +173,59 @@ NeighborhoodSearch::increase_point_set_size(unsigned int index, Real const* x, s
 		auto it = m_map.find(key);
 		if (it == m_map.end())
 		{
-			m_entries.push_back({{ index, i }});
+			m_entries.push_back({ { index, i } });
+			if (m_activation_table.is_searching_neighbors(index))
+				m_entries.back().n_searching_points++;
 			m_map[key] = static_cast<unsigned int>(m_entries.size() - 1);
 		}
-		else 
+		else
 		{
 			m_entries[it->second].add({ index, i });
+			if (m_activation_table.is_searching_neighbors(index))
+				m_entries.back().n_searching_points++;
 		}
 	}
 
-	point_set.resize(x, size);
+	// Resize spinlock arrays.
+	for (auto& l : point_set.m_locks)
+		l.resize(point_set.n_points());
 
 }
 
 void
-NeighborhoodSearch::find_neighbors()
+NeighborhoodSearch::update_activation_table()
+{
+	if (m_activation_table != m_old_activation_table)
+	{
+		for (auto& entry : m_entries)
+		{
+			auto& n = entry.n_searching_points;
+			n = 0u;
+			for (auto const& idx : entry.indices)
+			{
+				if (m_activation_table.is_searching_neighbors(idx.point_set_id))
+				{
+					++n;
+				}
+			}
+		}
+		m_old_activation_table = m_activation_table;
+	}
+}
+
+void
+NeighborhoodSearch::find_neighbors(bool points_changed_)
+{
+	if (points_changed_)
+	{
+		update_point_sets();
+	}
+	update_activation_table();
+	query();
+}
+
+void
+NeighborhoodSearch::update_point_sets()
 {
 	if (!m_initialized)
 	{
@@ -157,7 +239,9 @@ NeighborhoodSearch::find_neighbors()
 		if (!d.is_dynamic()) continue;
 		d.m_keys.swap(d.m_old_keys);
 		for (unsigned int i = 0; i < d.n_points(); ++i)
+		{
 			d.m_keys[i] = cell_index(d.point(i));
+		}
 	}
 
 	std::vector<unsigned int> to_delete;
@@ -170,7 +254,12 @@ NeighborhoodSearch::find_neighbors()
 	{
 		erase_empty_entries(to_delete);
 	}
-	query();
+}
+
+void
+NeighborhoodSearch::find_neighbors(unsigned int point_set_id, unsigned int point_index, std::vector<std::vector<unsigned int>> &neighbors)
+{
+	query(point_set_id, point_index, neighbors);
 }
 
 void
@@ -247,16 +336,22 @@ NeighborhoodSearch::update_hash_table(std::vector<unsigned int>& to_delete)
 			if (it == m_map.end())
 			{
 				m_entries.push_back({{j, i}});
+				if (m_activation_table.is_searching_neighbors(j))
+					m_entries.back().n_searching_points++;
 				m_map.insert({ key, static_cast<unsigned int>(m_entries.size() - 1) });
 			}
 			else
 			{
 				HashEntry& entry = m_entries[it->second];
 				entry.add({j, i});
+				if (m_activation_table.is_searching_neighbors(j))
+					entry.n_searching_points++;
 			}
 
 			unsigned int entry_index = m_map[d.m_old_keys[i]];
 			m_entries[entry_index].erase({j, i});
+			if (m_activation_table.is_searching_neighbors(j))
+				m_entries[entry_index].n_searching_points--;
 			if (m_erase_empty_cells)
 			{
 				if (m_entries[entry_index].n_indices() == 0)
@@ -278,13 +373,19 @@ NeighborhoodSearch::update_hash_table(std::vector<unsigned int>& to_delete)
 void
 NeighborhoodSearch::query()
 {
-	for (PointSet& d : m_point_sets)
+	for (unsigned int i = 0; i < m_point_sets.size(); i++)
 	{
-		if (d.is_neighborsearch_enabled())
+		PointSet &d = m_point_sets[i];
+		d.m_neighbors.resize(m_point_sets.size());
+		for (unsigned int j = 0; j < d.m_neighbors.size(); j++)
 		{
-			for (auto& n : d.m_neighbors)
+			auto &n = d.m_neighbors[j];
+			n.resize(d.n_points());
+			for (auto& n_ : n)
 			{
-				n.clear();
+				n_.clear();
+				if (m_activation_table.is_active(i, j))
+					n_.reserve(INITIAL_NUMBER_OF_NEIGHBORS);
 			}
 		}
 	}
@@ -308,6 +409,11 @@ NeighborhoodSearch::query()
 		HashEntry const& entry = m_entries[kvp.second];
 		HashKey const& key = kvp.first;
 
+		if (entry.n_searching_points == 0u)
+		{
+			return;
+		}
+
 		for (unsigned int a = 0; a < entry.n_indices(); ++a)
 		{
 			PointID const& va = entry.indices[a];
@@ -317,8 +423,8 @@ NeighborhoodSearch::query()
 				PointID const& vb = entry.indices[b];
 				PointSet& db = m_point_sets[vb.point_set_id];
 
-				if (!da.is_neighborsearch_enabled() && 
-					!db.is_neighborsearch_enabled())
+				if (!m_activation_table.is_active(va.point_set_id, vb.point_set_id) &&
+					!m_activation_table.is_active(vb.point_set_id, va.point_set_id))
 				{
 					continue;
 				}
@@ -334,18 +440,19 @@ NeighborhoodSearch::query()
 
 				if (l2 < m_r2)
 				{
-					if (da.is_neighborsearch_enabled())
+					if (m_activation_table.is_active(va.point_set_id, vb.point_set_id))
 					{
-						da.m_neighbors[va.point_id].push_back(vb);
+						da.m_neighbors[vb.point_set_id][va.point_id].push_back(vb.point_id);
 					}
-					if (db.is_neighborsearch_enabled())
+					if (m_activation_table.is_active(vb.point_set_id, va.point_set_id))
 					{
-						db.m_neighbors[vb.point_id].push_back(va);
+						db.m_neighbors[va.point_set_id][vb.point_id].push_back(va.point_id);
 					}
 				}
 			}
 		}
-	});
+	}
+	);
 
 
 	std::vector<std::array<bool, 27>> visited(m_entries.size(), {false});
@@ -360,6 +467,9 @@ NeighborhoodSearch::query()
 	{
 		auto const& kvp = *kvp_;
 		HashEntry const& entry = m_entries[kvp.second];
+
+		if (entry.n_searching_points == 0u)
+			return;
 		HashKey const& key = kvp.first;
 
 		for (int dj = -1; dj <= 1; dj++)
@@ -415,8 +525,9 @@ NeighborhoodSearch::query()
 					PointSet& db = m_point_sets[vb.point_set_id];
 
 					PointSet& da = m_point_sets[va.point_set_id];
-					if (!da.is_neighborsearch_enabled() && 
-						!db.is_neighborsearch_enabled())
+
+					if (!m_activation_table.is_active(va.point_set_id, vb.point_set_id) &&
+						!m_activation_table.is_active(vb.point_set_id, va.point_set_id))
 					{
 						continue;
 					}
@@ -431,25 +542,122 @@ NeighborhoodSearch::query()
 					l2 += tmp * tmp;
 					if (l2 < m_r2)
 					{
-						if (da.is_neighborsearch_enabled())
+						if (m_activation_table.is_active(va.point_set_id, vb.point_set_id))
 						{
-							da.m_locks[va.point_id].lock();
-							da.m_neighbors[va.point_id].push_back(vb);
-							da.m_locks[va.point_id].unlock();
+							da.m_locks[vb.point_set_id][va.point_id].lock();
+							da.m_neighbors[vb.point_set_id][va.point_id].push_back(vb.point_id);
+							da.m_locks[vb.point_set_id][va.point_id].unlock();
 						}
-						if (db.is_neighborsearch_enabled())
+						if (m_activation_table.is_active(vb.point_set_id, va.point_set_id))
 						{
-							db.m_locks[vb.point_id].lock();
-							db.m_neighbors[vb.point_id].push_back(va);
-							db.m_locks[vb.point_id].unlock();
+							db.m_locks[va.point_set_id][vb.point_id].lock();
+							db.m_neighbors[va.point_set_id][vb.point_id].push_back(va.point_id);
+							db.m_locks[va.point_set_id][vb.point_id].unlock();
 						}
 					}
 				}
 			}
-		
 		}
 	});
+
 }
+
+
+void
+NeighborhoodSearch::query(unsigned int point_set_id, unsigned int point_index, std::vector<std::vector<unsigned int>> &neighbors)
+{
+	neighbors.resize(m_point_sets.size());
+	PointSet &d = m_point_sets[point_set_id];
+	for (unsigned int j = 0; j < m_point_sets.size(); j++)
+	{
+		auto &n = neighbors[j];
+		n.clear();
+		if (m_activation_table.is_active(point_set_id, j))
+			n.reserve(INITIAL_NUMBER_OF_NEIGHBORS);
+	}
+
+	Real const* xa = d.point(point_index);
+	HashKey hash_key = cell_index(xa);
+	auto it = m_map.find(hash_key);
+	std::pair<HashKey const, unsigned int> &kvp = *it;
+	HashEntry const& entry = m_entries[kvp.second];
+
+	// Perform neighborhood search.
+	for (unsigned int b = 0; b < entry.n_indices(); ++b)
+	{
+		PointID const& vb = entry.indices[b];
+		if ((point_set_id != vb.point_set_id) || (point_index != vb.point_id))
+		{
+			if (!m_activation_table.is_active(point_set_id, vb.point_set_id))
+			{
+				continue;
+			}
+
+			PointSet& db = m_point_sets[vb.point_set_id];
+			Real const* xb = db.point(vb.point_id);
+			Real tmp = xa[0] - xb[0];
+			Real l2 = tmp * tmp;
+			tmp = xa[1] - xb[1];
+			l2 += tmp * tmp;
+			tmp = xa[2] - xb[2];
+			l2 += tmp * tmp;
+
+			if (l2 < m_r2)
+			{
+				neighbors[vb.point_set_id].push_back(vb.point_id);
+			}
+		}
+	}
+
+	for (int dj = -1; dj <= 1; dj++)
+	{
+		for (int dk = -1; dk <= 1; dk++)
+		{
+			for (int dl = -1; dl <= 1; dl++)
+			{
+				int l_ind = 9 * (dj + 1) + 3 * (dk + 1) + (dl + 1);
+				if (l_ind == 13)
+				{
+					continue;
+				}
+
+				auto it = m_map.find({ hash_key.k[0] + dj, hash_key.k[1] + dk, hash_key.k[2] + dl });
+				if (it == m_map.end())
+					continue;
+
+				std::array<unsigned int, 2> entry_ids{ { kvp.second, it->second } };
+				if (entry_ids[0] > entry_ids[1])
+					std::swap(entry_ids[0], entry_ids[1]);
+
+				HashEntry const& entry_ = m_entries[it->second];
+				unsigned int n_ind = entry_.n_indices();
+				for (unsigned int j = 0; j < n_ind; ++j)
+				{
+					PointID const& vb = entry_.indices[j];
+					if (!m_activation_table.is_active(point_set_id, vb.point_set_id))
+					{
+						continue;
+					}
+					PointSet& db = m_point_sets[vb.point_set_id];
+
+					Real const* xb = db.point(vb.point_id);
+					Real tmp = xa[0] - xb[0];
+					Real l2 = tmp * tmp;
+					tmp = xa[1] - xb[1];
+					l2 += tmp * tmp;
+					tmp = xa[2] - xb[2];
+					l2 += tmp * tmp;
+
+					if (l2 < m_r2)
+					{
+						neighbors[vb.point_set_id].push_back(vb.point_id);
+					}
+				}
+			}
+		}
+	}
+}
+
 
 }
 

@@ -15,7 +15,8 @@ using namespace CompactNSearch;
 
 std::vector<std::array<Real, 3>> positions;
 
-std::size_t const N = 150;
+std::size_t const N = 30;
+//std::size_t const N = 5;
 Real const r_omega = 0.15;
 Real const r_omega2 = r_omega * r_omega;
 Real const radius = 2.0 * (2.0 * r_omega / static_cast<Real>(N-1));
@@ -29,7 +30,7 @@ compute_average_number_of_neighbors(NeighborhoodSearch const& nsearch)
 	auto const& d = nsearch.point_set(0);
 	for (int i = 0; i < d.n_points(); ++i)
 	{
-		res += static_cast<unsigned long>(d.n_neighbors(i));
+		res += static_cast<unsigned long>(d.n_neighbors(0, i));
 	}
 	return static_cast<Real>(res) / static_cast<Real>(d.n_points());
 }
@@ -42,11 +43,11 @@ compute_average_distance(NeighborhoodSearch const& nsearch)
 	unsigned long long count = 0;
 	for (int i = 0; i < d.n_points(); ++i)
 	{
-		std::size_t nn = d.n_neighbors(i);
+		std::size_t nn = d.n_neighbors(0, i);
 		for (int j = 0; j < nn; ++j)
 		{
-			CompactNSearch::PointID const& k = d.neighbor(i, j);
-			res += std::abs(i - static_cast<int>(k.point_id));
+			unsigned int k = d.neighbor(0, i, j);
+			res += std::abs(i - static_cast<int>(k));
 			count++;
 		}
 	}
@@ -54,13 +55,13 @@ compute_average_distance(NeighborhoodSearch const& nsearch)
 }
 
 std::vector<std::vector<unsigned int>>
-brute_force_search()
+brute_force_search(std::size_t n_positions)
 {
-	std::vector<std::vector<unsigned int>> brute_force_neighbors(positions.size());
-	for (int i = 0; i < positions.size(); ++i)
+	std::vector<std::vector<unsigned int>> brute_force_neighbors(n_positions);
+	for (int i = 0; i < n_positions; ++i)
 	{
 		std::vector<unsigned int>& neighbors = brute_force_neighbors[i];
-		for (int j = 0; j < positions.size(); ++j)
+		for (int j = 0; j < n_positions; ++j)
 		{
 			if (i == j)
 				continue;
@@ -82,24 +83,50 @@ brute_force_search()
 void
 compare_with_bruteforce_search(NeighborhoodSearch const& nsearch)
 {
-	auto brute_force_neighbors = brute_force_search();
 	PointSet const& d0 = nsearch.point_set(0);
-	for (int i = 0; i < N; ++i)
+	auto brute_force_neighbors = brute_force_search(d0.n_points());
+	for (int i = 0; i < d0.n_points(); ++i)
 	{
 		auto const& bfn = brute_force_neighbors[i];
-		if (bfn.size() != d0.n_neighbors(i))
+		if (bfn.size() != d0.n_neighbors(0, i))
 		{
 			std::cerr << "ERROR: Not the same number of neighbors." << std::endl;
 		}
-		for (int j = 0; j < d0.n_neighbors(i); ++j)
+		for (int j = 0; j < d0.n_neighbors(0, i); ++j)
 		{
-			if (std::find(bfn.begin(), bfn.end(), d0.neighbor(i, j).point_id) == bfn.end())
+			if (std::find(bfn.begin(), bfn.end(), d0.neighbor(0, i, j)) == bfn.end())
 			{
 				std::cerr << "ERROR: Neighbor not found in brute force list." << std::endl;
 			}
 		}
 	}
 }
+
+void
+compare_single_query_with_bruteforce_search(NeighborhoodSearch& nsearch)
+{
+	std::vector<std::vector<unsigned int>> neighbors;
+	PointSet const& d0 = nsearch.point_set(0);
+	auto brute_force_neighbors = brute_force_search(d0.n_points());
+	for (int i = 0; i < d0.n_points(); ++i)
+	{
+		auto const& bfn = brute_force_neighbors[i];
+		neighbors.clear();
+		nsearch.find_neighbors(0, i, neighbors);
+		if (bfn.size() != neighbors[0].size())
+		{
+			std::cerr << "ERROR: Not the same number of neighbors." << std::endl;
+		}
+		for (int j = 0; j < neighbors.size(); ++j)
+		{
+			if (std::find(bfn.begin(), bfn.end(), neighbors[0][j]) == bfn.end())
+			{
+				std::cerr << "ERROR: Neighbor not found in brute force list." << std::endl;
+			}
+		}
+	}
+}
+
 
 std::array<Real, 3>
 enright_velocity_field(std::array<Real, 3> const& x)
@@ -111,11 +138,11 @@ enright_velocity_field(std::array<Real, 3> const& x)
 	sin_pi_y_2 *= sin_pi_y_2;
 	sin_pi_z_2 *= sin_pi_z_2;
 
-	Real sin_2_pi_x = std::sin(2.0 * M_PI * x[0]);
-	Real sin_2_pi_y = std::sin(2.0 * M_PI * x[1]);
-	Real sin_2_pi_z = std::sin(2.0 * M_PI * x[2]);
+	Real sin_2_pi_x = static_cast<Real>(std::sin(2.0 * M_PI * x[0]));
+	Real sin_2_pi_y = static_cast<Real>(std::sin(2.0 * M_PI * x[1]));
+	Real sin_2_pi_z = static_cast<Real>(std::sin(2.0 * M_PI * x[2]));
 	return {{
-			2.0 * sin_pi_x_2 * sin_2_pi_y * sin_2_pi_z,
+			static_cast<Real>(2.0) * sin_pi_x_2 * sin_2_pi_y * sin_2_pi_z,
 			-sin_2_pi_x * sin_pi_y_2 * sin_2_pi_z,
 			-sin_2_pi_x * sin_2_pi_y * sin_pi_z_2}};
 
@@ -178,7 +205,14 @@ int main(int argc, char* argv[])
 
 	NeighborhoodSearch nsearch(radius, true);
 	nsearch.add_point_set(positions.front().data(), positions.size(), true, true);
+	nsearch.add_point_set(positions.front().data(), positions.size(), true, true);
 	nsearch.find_neighbors();
+
+	nsearch.update_point_sets();
+	std::vector<std::vector<unsigned int>> neighbors2;
+	nsearch.find_neighbors(0, 1, neighbors2);
+	std::vector<std::vector<unsigned int>> neighbors3;
+	nsearch.find_neighbors(1, 2, neighbors3);
 
 	std::cout << "#Points                                = " << positions.size() << std::endl;
 	std::cout << "Search radius                          = " << radius << std::endl;
@@ -188,11 +222,15 @@ int main(int argc, char* argv[])
 	std::cout << "Average index distance prior to z-sort = " << compute_average_distance(nsearch) << std::endl;
 
 	nsearch.z_sort();
-	for (auto const& d : nsearch.point_sets())
+	for (auto i = 0u; i < nsearch.n_point_sets(); ++i)
 	{
+		auto const& d = nsearch.point_set(i);
 		d.sort_field(positions.data());
+
 	}
 	nsearch.find_neighbors();
+
+	//compare_single_query_with_bruteforce_search(nsearch);
 	//compare_with_bruteforce_search(nsearch);
 
 	std::cout << "Average index distance after z-sort    = " << compute_average_distance(nsearch) << std::endl;
@@ -206,6 +244,7 @@ int main(int argc, char* argv[])
 		nsearch.find_neighbors();
 		std::cout << "Neighborhood search took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - t0).count() << "ms" << std::endl;
 		//compare_with_bruteforce_search(nsearch);
+		//compare_single_query_with_bruteforce_search(nsearch);
 	}
 
 	return 0;
