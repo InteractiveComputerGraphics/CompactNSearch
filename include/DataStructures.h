@@ -36,9 +36,9 @@ struct HashKey
 
 	bool operator==(HashKey const& other) const
 	{
-		return 
+		return
 			k[0] == other.k[0] &&
-			k[1] == other.k[1] && 
+			k[1] == other.k[1] &&
 			k[2] == other.k[2];
 	}
 
@@ -87,7 +87,7 @@ struct SpatialHasher
 {
 	std::size_t operator()(HashKey const& k) const
 	{
-		return 
+		return
 			73856093 * k.k[0] ^
 			19349663 * k.k[1] ^
 			83492791 * k.k[2];
@@ -108,14 +108,13 @@ public:
 		m_lock.clear(std::memory_order_release);
 	}
 
-	Spinlock() { m_lock.clear();  }
+	Spinlock() = default;
 	Spinlock(Spinlock const& other) {};
 	Spinlock& operator=(Spinlock const& other) { return *this; }
 
-
 private:
 
-	std::atomic_flag m_lock;
+	std::atomic_flag m_lock = ATOMIC_FLAG_INIT;
 };
 
 class ActivationTable
@@ -123,7 +122,7 @@ class ActivationTable
 private:
 	std::vector<std::vector<unsigned char>> m_table;
 
-public: 
+public:
 
 	bool operator==(ActivationTable const& other) const
 	{
@@ -135,7 +134,7 @@ public:
 		return !(m_table == other.m_table);
 	}
 
-	/** Add point set. If search_neighbors is true, neighbors in all other point sets are searched. 
+	/** Add point set. If search_neighbors is true, neighbors in all other point sets are searched.
 	* If find_neighbors is true, the new point set is activated in the neighborhood search of all other point sets.
 	*/
 	void add_point_set(bool search_neighbors = true, bool find_neighbors = true)
