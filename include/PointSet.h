@@ -32,6 +32,7 @@ public:
 		m_x = other.m_x;
 		m_n = other.m_n;
 		m_dynamic = other.m_dynamic;
+		m_user_data = other.m_user_data;
 
 		m_neighbors = other.m_neighbors;
 		m_keys = other.m_keys;
@@ -80,6 +81,11 @@ public:
 	*/
 	void set_dynamic(bool v) { m_dynamic = v; }
 
+	/** 
+	* Return the user data which can be attached to a point set.
+	*/
+	void *get_user_data() { return m_user_data;  }
+
 	/**
 	* Reorders an array according to a previously generated sort table by invocation of the method
 	* "z_sort" of class "NeighborhoodSearch". Please note that the method "z_sort" of class
@@ -91,8 +97,8 @@ public:
 private:
 
 	friend NeighborhoodSearch;
-	PointSet(Real const* x, std::size_t n, bool dynamic)
-		: m_x(x), m_n(n), m_dynamic(dynamic), m_neighbors(n)
+	PointSet(Real const* x, std::size_t n, bool dynamic, void *user_data = nullptr)
+		: m_x(x), m_n(n), m_dynamic(dynamic), m_user_data(user_data), m_neighbors(n)
 		, m_keys(n, {
 		std::numeric_limits<int>::lowest(),
 		std::numeric_limits<int>::lowest(),
@@ -123,6 +129,7 @@ private:
 	Real const* m_x;
 	std::size_t m_n;
 	bool m_dynamic;
+	void *m_user_data;
 
 	std::vector<std::vector<std::vector<unsigned int>>> m_neighbors;
 

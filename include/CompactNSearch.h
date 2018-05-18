@@ -87,9 +87,9 @@ public:
 	* set.
 	*/
 	unsigned int add_point_set(Real const* x, std::size_t n, bool is_dynamic = true,
-		bool search_neighbors = true, bool find_neighbors = true)
+		bool search_neighbors = true, bool find_neighbors = true, void *user_data = nullptr)
 	{ 
-		m_point_sets.push_back({x, n, is_dynamic});
+		m_point_sets.push_back({x, n, is_dynamic, user_data});
 		m_activation_table.add_point_set(search_neighbors, find_neighbors);
 		return static_cast<unsigned int>(m_point_sets.size() - 1);
 	}
