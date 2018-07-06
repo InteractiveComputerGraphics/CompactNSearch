@@ -17,9 +17,9 @@ std::vector<std::array<Real, 3>> positions;
 
 std::size_t const N = 30;
 //std::size_t const N = 5;
-Real const r_omega = 0.15;
+Real const r_omega = static_cast<Real>(0.15);
 Real const r_omega2 = r_omega * r_omega;
-Real const radius = 2.0 * (2.0 * r_omega / static_cast<Real>(N-1));
+Real const radius = static_cast<Real>(2.0) * (static_cast<Real>(2.0) * r_omega / static_cast<Real>(N-1));
 
 std::size_t const N_enright_steps = 50;
 
@@ -131,16 +131,16 @@ compare_single_query_with_bruteforce_search(NeighborhoodSearch& nsearch)
 std::array<Real, 3>
 enright_velocity_field(std::array<Real, 3> const& x)
 {
-	Real sin_pi_x_2 = std::sin(M_PI * x[0]);
-	Real sin_pi_y_2 = std::sin(M_PI * x[1]);
-	Real sin_pi_z_2 = std::sin(M_PI * x[2]);
+	Real sin_pi_x_2 = std::sin(static_cast<Real>(M_PI) * x[0]);
+	Real sin_pi_y_2 = std::sin(static_cast<Real>(M_PI) * x[1]);
+	Real sin_pi_z_2 = std::sin(static_cast<Real>(M_PI) * x[2]);
 	sin_pi_x_2 *= sin_pi_x_2;
 	sin_pi_y_2 *= sin_pi_y_2;
 	sin_pi_z_2 *= sin_pi_z_2;
 
-	Real sin_2_pi_x = static_cast<Real>(std::sin(2.0 * M_PI * x[0]));
-	Real sin_2_pi_y = static_cast<Real>(std::sin(2.0 * M_PI * x[1]));
-	Real sin_2_pi_z = static_cast<Real>(std::sin(2.0 * M_PI * x[2]));
+	Real sin_2_pi_x = static_cast<Real>(std::sin(static_cast<Real>(2.0 * M_PI) * x[0]));
+	Real sin_2_pi_y = static_cast<Real>(std::sin(static_cast<Real>(2.0 * M_PI) * x[1]));
+	Real sin_2_pi_z = static_cast<Real>(std::sin(static_cast<Real>(2.0 * M_PI) * x[2]));
 	return {{
 			static_cast<Real>(2.0) * sin_pi_x_2 * sin_2_pi_y * sin_2_pi_z,
 			-sin_2_pi_x * sin_pi_y_2 * sin_2_pi_z,
@@ -159,9 +159,9 @@ advect()
 	(positions.begin(), positions.end(), [&](std::array<Real, 3>& x)
 	{
 		std::array<Real, 3> v = enright_velocity_field(x);
-		x[0] += 0.005 * v[0];
-		x[1] += 0.005 * v[1];
-		x[2] += 0.005 * v[1];
+		x[0] += static_cast<Real>(0.005) * v[0];
+		x[1] += static_cast<Real>(0.005) * v[1];
+		x[2] += static_cast<Real>(0.005) * v[1];
 	}
 	);
 }
@@ -178,16 +178,16 @@ int main(int argc, char* argv[])
 			for (unsigned int k = 0; k < N; ++k)
 			{
 				std::array<Real, 3> x = {{
-						r_omega * (2.0 * static_cast<Real>(i) / static_cast<Real>(N-1)-1.0),
-						r_omega * (2.0 * static_cast<Real>(j) / static_cast<Real>(N-1)-1.0),
-						r_omega * (2.0 * static_cast<Real>(k) / static_cast<Real>(N-1)-1.0)}};
+						r_omega * (static_cast<Real>(2.0) * static_cast<Real>(i) / static_cast<Real>(N-1)-static_cast<Real>(1.0)),
+						r_omega * (static_cast<Real>(2.0) * static_cast<Real>(j) / static_cast<Real>(N-1)-static_cast<Real>(1.0)),
+						r_omega * (static_cast<Real>(2.0) * static_cast<Real>(k) / static_cast<Real>(N-1)-static_cast<Real>(1.0))}};
 
 				Real l2  = x[0] * x[0] + x[1] * x[1] + x[2] * x[2];
 				if (l2 < r_omega2)
 				{
-					x[0] += 0.35;
-					x[1] += 0.35;
-					x[2] += 0.35;
+					x[0] += static_cast<Real>(0.35);
+					x[1] += static_cast<Real>(0.35);
+					x[2] += static_cast<Real>(0.35);
 					positions.push_back(x);
 					if (min_x > x[0])
 					{

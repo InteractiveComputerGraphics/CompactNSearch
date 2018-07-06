@@ -37,6 +37,11 @@ install(TARGETS CompactNSearch
 	RUNTIME DESTINATION bin
 	LIBRARY DESTINATION lib
 	ARCHIVE DESTINATION lib)
+	
+OPTION(USE_DOUBLE_PRECISION "Use double precision"	ON)
+if (USE_DOUBLE_PRECISION)
+	add_definitions( -DUSE_DOUBLE)	
+endif (USE_DOUBLE_PRECISION)	
 
 option(BUILD_DEMO "Build example of how to use this library."
 		ON)
