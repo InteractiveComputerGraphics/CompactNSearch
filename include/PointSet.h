@@ -40,6 +40,12 @@ public:
 
 		m_sort_table = other.m_sort_table;
 
+		m_locks.resize(other.m_locks.size());
+		for (unsigned int i = 0; i < other.m_locks.size(); ++i)
+		{
+			m_locks[i].resize(other.m_locks[i].size());
+		}
+
 		return *this;
 	}
 
