@@ -71,6 +71,16 @@ public:
 		return m_neighbors[point_set][i][k];
 	}
 
+	/**
+	* Fetches the neighbor list of point i in the given point set.
+	* @param point_set Point set index of other point set where neighbors have been searched.
+	* @param i Point index for which the neighbor list should be returned.
+	* @returns Neighbor list of point i in point set point_set.
+	*/
+	const std::vector<unsigned int>& neighbor_list(unsigned int point_set, unsigned int i) const
+	{
+		return m_neighbors[point_set][i];
+	}
 
 	/**
 	* Returns the number of points contained in the point set.
