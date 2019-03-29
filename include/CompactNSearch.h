@@ -101,10 +101,16 @@ public:
 	void find_neighbors(bool points_changed = true);
 
 	/**
-	* Performs the actual query for a single point. This method return a list of neighboring points. Note: That points_changed() must be called each time 
+	* Performs the actual query for a single point. This method returns a list of neighboring points. Note: That points_changed() must be called each time 
 	* when the positions of a point set changed. 
 	*/
 	void find_neighbors(unsigned int point_set_id, unsigned int point_index, std::vector<std::vector<unsigned int>> &neighbors);
+	
+	/**
+	* Performs the actual query for a single point x. This method returns a list of neighboring points in all existing point sets. Note: That points_changed() must be called each time 
+	* when the positions of a point set changed. 
+	*/
+	void find_neighbors(Real const* x, std::vector<std::vector<unsigned int>> &neighbors);
 
 	/** 
 	* Update neighborhood search data structures after a position change.
@@ -192,6 +198,7 @@ private:
 	void erase_empty_entries(std::vector<unsigned int> const& to_delete);
 	void query();
 	void query(unsigned int point_set_id, unsigned int point_index, std::vector<std::vector<unsigned int>> &neighbors);
+	void query(Real const* xa, std::vector<std::vector<unsigned int>> &neighbors);
 
 	HashKey cell_index(Real const* x) const;
 

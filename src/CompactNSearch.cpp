@@ -234,15 +234,22 @@ NeighborhoodSearch::update_point_sets()
 	}
 
 	// Precompute cell indices.
-	for (PointSet& d : m_point_sets)
+#ifdef _MSC_VER
+	concurrency::parallel_for_each
+#else
+	__gnu_parallel::for_each
+#endif
+	(m_point_sets.begin(), m_point_sets.end(), [&](PointSet& d)
 	{
-		if (!d.is_dynamic()) continue;
-		d.m_keys.swap(d.m_old_keys);
-		for (unsigned int i = 0; i < d.n_points(); ++i)
+		if (d.is_dynamic()) 
 		{
-			d.m_keys[i] = cell_index(d.point(i));
+			d.m_keys.swap(d.m_old_keys);
+			for (unsigned int i = 0; i < d.n_points(); ++i)
+			{
+				d.m_keys[i] = cell_index(d.point(i));
+			}
 		}
-	}
+	});
 
 	std::vector<unsigned int> to_delete;
 	if (m_erase_empty_cells)
@@ -260,6 +267,12 @@ void
 NeighborhoodSearch::find_neighbors(unsigned int point_set_id, unsigned int point_index, std::vector<std::vector<unsigned int>> &neighbors)
 {
 	query(point_set_id, point_index, neighbors);
+}
+
+void
+NeighborhoodSearch::find_neighbors(Real const* x, std::vector<std::vector<unsigned int>> &neighbors)
+{
+	query(x, neighbors);
 }
 
 void
@@ -638,6 +651,85 @@ NeighborhoodSearch::query(unsigned int point_set_id, unsigned int point_index, s
 					{
 						continue;
 					}
+					PointSet& db = m_point_sets[vb.point_set_id];
+
+					Real const* xb = db.point(vb.point_id);
+					Real tmp = xa[0] - xb[0];
+					Real l2 = tmp * tmp;
+					tmp = xa[1] - xb[1];
+					l2 += tmp * tmp;
+					tmp = xa[2] - xb[2];
+					l2 += tmp * tmp;
+
+					if (l2 < m_r2)
+					{
+						neighbors[vb.point_set_id].push_back(vb.point_id);
+					}
+				}
+			}
+		}
+	}
+}
+
+void
+NeighborhoodSearch::query(Real const* xa, std::vector<std::vector<unsigned int>> &neighbors)
+{
+	neighbors.resize(m_point_sets.size());
+	for (unsigned int j = 0; j < m_point_sets.size(); j++)
+	{
+		auto &n = neighbors[j];
+		n.clear();
+		n.reserve(INITIAL_NUMBER_OF_NEIGHBORS);
+	}
+
+	HashKey hash_key = cell_index(xa);
+	auto it = m_map.find(hash_key);
+	if (it != m_map.end())
+	{
+		std::pair<HashKey const, unsigned int> &kvp = *it;
+		HashEntry const& entry = m_entries[kvp.second];
+
+		// Perform neighborhood search.
+		for (unsigned int b = 0; b < entry.n_indices(); ++b)
+		{
+			PointID const& vb = entry.indices[b];
+			PointSet& db = m_point_sets[vb.point_set_id];
+			Real const* xb = db.point(vb.point_id);
+			Real tmp = xa[0] - xb[0];
+			Real l2 = tmp * tmp;
+			tmp = xa[1] - xb[1];
+			l2 += tmp * tmp;
+			tmp = xa[2] - xb[2];
+			l2 += tmp * tmp;
+
+			if (l2 < m_r2)
+			{
+				neighbors[vb.point_set_id].push_back(vb.point_id);
+			}
+		}
+	}
+
+	for (int dj = -1; dj <= 1; dj++)
+	{
+		for (int dk = -1; dk <= 1; dk++)
+		{
+			for (int dl = -1; dl <= 1; dl++)
+			{
+				int l_ind = 9 * (dj + 1) + 3 * (dk + 1) + (dl + 1);
+				if (l_ind == 13)
+				{
+					continue;
+				}
+
+				auto it = m_map.find({ hash_key.k[0] + dj, hash_key.k[1] + dk, hash_key.k[2] + dl });
+				if (it == m_map.end())
+					continue;
+
+				HashEntry const& entry_ = m_entries[it->second];
+				unsigned int n_ind = entry_.n_indices();
+				for (unsigned int j = 0; j < n_ind; ++j)
+				{
+					PointID const& vb = entry_.indices[j];
 					PointSet& db = m_point_sets[vb.point_set_id];
 
 					Real const* xb = db.point(vb.point_id);
