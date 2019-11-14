@@ -15,7 +15,7 @@ if (OPENMP_FOUND)
 endif(OPENMP_FOUND)
 endif (UNIX)
 
-OPTION(BUILD_AS_SHARED_LIBS "Build all the libraries as shared" ON)
+OPTION(BUILD_AS_SHARED_LIBS "Build all the libraries as shared" OFF)
 if (BUILD_AS_SHARED_LIBS)
 	add_definitions( -DBUILD_AS_SHARED_LIBS)
 endif (BUILD_AS_SHARED_LIBS)
