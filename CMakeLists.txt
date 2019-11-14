@@ -15,6 +15,11 @@ if (OPENMP_FOUND)
 endif(OPENMP_FOUND)
 endif (UNIX)
 
+OPTION(BUILD_AS_SHARED_LIBS "Build all the libraries as shared" ON)
+if (BUILD_AS_SHARED_LIBS)
+	add_definitions( -DBUILD_AS_SHARED_LIBS)
+endif (BUILD_AS_SHARED_LIBS)
+
 SET(CMAKE_DEBUG_POSTFIX "_d")
 
 set (HEADER_FILES 
@@ -25,10 +30,17 @@ set (HEADER_FILES
 
 include_directories("include")
 
-add_library(CompactNSearch
-		${HEADER_FILES}
+if (BUILD_AS_SHARED_LIBS)
+	add_library(CompactNSearch SHARED 
+	    ${HEADER_FILES}
 		src/CompactNSearch.cpp
 )
+else()
+	add_library(CompactNSearch
+	    ${HEADER_FILES}
+		src/CompactNSearch.cpp
+)
+endif ()
 
 install(FILES "include/CompactNSearch" ${HEADER_FILES}
 	DESTINATION include/)
