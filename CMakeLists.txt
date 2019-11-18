@@ -20,6 +20,7 @@ if (BUILD_AS_SHARED_LIBS)
 	add_definitions( -DBUILD_AS_SHARED_LIBS)
 	if(WIN32)
 		add_definitions(-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS)
+		set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS YES CACHE BOOL "Export all symbols")
 	endif(WIN32)	
 endif (BUILD_AS_SHARED_LIBS)
 
