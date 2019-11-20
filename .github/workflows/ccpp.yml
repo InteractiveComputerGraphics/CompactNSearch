@@ -25,6 +25,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: configure
       run: mkdir build-release;cd build-release;cmake ..
+      shell: pwsh
     - name: build
       run: cmake --build build-release --config Release
 
