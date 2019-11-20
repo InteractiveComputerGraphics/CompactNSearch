@@ -14,7 +14,7 @@ jobs:
     - name: build
       run: cmake --build build-release
     
-    build-windows-2016:
+  build-windows-2016:
 
     runs-on: windows-2016
 
