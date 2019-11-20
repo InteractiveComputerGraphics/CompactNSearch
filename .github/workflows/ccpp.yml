@@ -23,8 +23,12 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: mkdir
+      run: mkdir build-release
+    - name: cdir
+      run: cd build-release
     - name: configure
-      run: mkdir build-release && cd build-release && cmake ..
+      run: cmake ..
     - name: build
       run: cmake --build build-release --config Release
 
