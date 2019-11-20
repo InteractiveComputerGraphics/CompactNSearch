@@ -1,5 +1,7 @@
 # CompactNSearch
 
+<p align=center><img src="https://github.com/InteractiveComputerGraphics/CompactNSearch/workflows/build-linux/badge.svg">&nbsp;&nbsp; <img src="https://github.com/InteractiveComputerGraphics/CompactNSearch/workflows/build-windows/badge.svg"></p>
+
 **CompactNSearch** is a C++ library for **parallel** computation of neighboring points in a **fixed radius** in a **three-dimensional point cloud**. The implemented algorithm is a variant of the *Compact Hashing* approach proposed by Ihmsen et al. [IABT11]. The neighborhood information can be efficiently updated when the points spatially move. Moreover, the library offers the possibility to reorder the points (and other array-stored per point information) according to a space-filling Z curve to improve the cache efficiency in later queries or accesses.
 
 The library was used to generate all results of the SPH-based fluid simulations presented by Bender and Koschier in [BK15, BK16].
