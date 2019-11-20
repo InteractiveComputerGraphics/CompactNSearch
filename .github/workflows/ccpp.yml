@@ -14,20 +14,12 @@ jobs:
     - name: build
       run: cmake --build build-release
     
-  build-windows-2016:
+  build-windows:
 
-    runs-on: windows-2016
-
-    steps:
-    - uses: actions/checkout@v1
-    - name: configure
-      run: mkdir build-release && cd build-release && cmake ..
-    - name: build
-      run: cmake --build build-release --config Release
-
-  build-windows-latest:
-
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, windows-2016]
 
     steps:
     - uses: actions/checkout@v1
