@@ -162,6 +162,7 @@ public:
 	void set_active(unsigned int i, unsigned int j, bool active)
 	{
 		m_activation_table.set_active(i, j, active);
+		m_initialized = false;
 	}
 
 	/** Activate/Deactivate all point set pairs containing the given index. If search_neighbors is true, neighbors in all other point sets are searched.
@@ -173,6 +174,7 @@ public:
 	void set_active(unsigned int i, bool search_neighbors = true, bool find_neighbors = true)
 	{
 		m_activation_table.set_active(i, search_neighbors, find_neighbors);
+		m_initialized = false;
 	}
 
 	/** Activate/Deactivate all point set pairs.
@@ -180,6 +182,7 @@ public:
 	void set_active(bool active)
 	{
 		m_activation_table.set_active(active);
+		m_initialized = false;
 	}
 
 	/** Returns true if point set i searchs points in point set j.
