@@ -31,8 +31,6 @@ set (HEADER_FILES
 		include/PointSet.h
 		include/DataStructures.h)
 
-include_directories("include")
-
 if (BUILD_AS_SHARED_LIBS)
 	add_library(CompactNSearch SHARED 
 	    ${HEADER_FILES}
@@ -44,6 +42,8 @@ else()
 		src/CompactNSearch.cpp
 )
 endif ()
+
+target_include_directories(CompactNSearch PUBLIC include)
 
 install(FILES "include/CompactNSearch" ${HEADER_FILES}
 	DESTINATION include/)
