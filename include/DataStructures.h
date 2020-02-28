@@ -87,10 +87,10 @@ struct SpatialHasher
 {
 	std::size_t operator()(HashKey const& k) const
 	{
-		return
-			73856093 * k.k[0] ^
-			19349663 * k.k[1] ^
-			83492791 * k.k[2];
+		return static_cast<size_t>(
+			static_cast<int64_t>(73856093) * static_cast<int64_t>(k.k[0]) ^
+			static_cast<int64_t>(19349663) * static_cast<int64_t>(k.k[1]) ^
+			static_cast<int64_t>(83492791) * static_cast<int64_t>(k.k[2]));
 	}
 };
 
