@@ -41,10 +41,10 @@ Finally, the neighborhood information can be accessed as follows
 PointSet const& ps = nsearch.point_set(point_set_id);
 for (int i = 0; i < ps.n_points(); ++i)
 {
-	for (int j = 0; j < ps.n_neighbors(i); ++j)
+	for (size_t j = 0; j < ps.n_neighbors(neighbor_point_set_id, i); ++j)
 	{
-    	// Return PointID of the jth neighbor of the ith particle in the 0th point set.
-	    PointID const& pid = ps.neighbor(0, i, j);
+    	// Return the point id of the jth neighbor of the ith particle in the 0th point set.
+	    const unsigned int pid = ps.neighbor(0, i, j);
 	    // ...
 	    // Do whatever you want with the point id. The id contains two indices.
 	    // The first field pid.point_set_id represents the unique point set id returnd by add_point_set.
