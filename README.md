@@ -31,8 +31,8 @@ An arbitrary number of point clouds can then be added to the data structure usin
 std::vector<std::array<Real, 3>> point_set_1;
 std::vector<std::array<Real, 3>> point_set_2;
 
-unsigned int point_set_1_id = nsearch.add_point_set(positions.front().data(), positions.size());
-unsigned int point_set_2_id = nsearch.add_point_set(positions.front().data(), positions.size());
+unsigned int point_set_1_id = nsearch.add_point_set(point_set_1.front().data(), positions.size());
+unsigned int point_set_2_id = nsearch.add_point_set(point_set_2.front().data(), positions.size());
 ```
 In order to generate the neighborhood information simply execute the following command
 ```c++
