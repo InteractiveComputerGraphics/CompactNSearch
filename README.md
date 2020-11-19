@@ -27,10 +27,12 @@ CompactNSearch::NeighborhoodSearch nsearch(r);
 ```
 An arbitrary number of point clouds can then be added to the data structure using the method ```add_point_set```. The library expects the point positions to be contiguously stored in an array-like structure. The method will return a unique id associated with the initialized point set.
 ```c++
-std::vector<std::array<Real, 3>> positions;
 // ... Fill array with 3 * n real numbers representing three-dimensional point positions.
-unsigned int point_set_id = nsearch.add_point_set(positions.front().data(), positions.size());
-nsearch.find_neighbors();
+std::vector<std::array<Real, 3>> point_set_1;
+std::vector<std::array<Real, 3>> point_set_2;
+
+unsigned int point_set_1_id = nsearch.add_point_set(positions.front().data(), positions.size());
+unsigned int point_set_2_id = nsearch.add_point_set(positions.front().data(), positions.size());
 ```
 In order to generate the neighborhood information simply execute the following command
 ```c++
@@ -38,20 +40,22 @@ nsearch.find_neighbors();
 ```
 Finally, the neighborhood information can be accessed as follows
 ```c++
-PointSet const& ps = nsearch.point_set(point_set_id);
-for (int i = 0; i < ps.n_points(); ++i)
+CompactNSearch::PointSet const& ps_1 = nsearch.point_set(point_set_1_id);
+for (int i = 0; i < ps_1.n_points(); ++i)
 {
-	for (size_t j = 0; j < ps.n_neighbors(neighbor_point_set_id, i); ++j)
-	{
-    	// Return the point id of the jth neighbor of the ith particle in the 0th point set.
-	    const unsigned int pid = ps.neighbor(0, i, j);
-	    // ...
-	    // Do whatever you want with the point id. The id contains two indices.
-	    // The first field pid.point_set_id represents the unique point set id returnd by add_point_set.
-	    // The second field pid.point_id stands for the index of the neighboring particle within
-	    // the containing point set.
-	    // ...
-	}
+    // Get point set 1 neighbors of point set 1.
+    for (size_t j = 0; j < ps_1.n_neighbors(point_set_1_id, i); ++j)
+    {
+        // Return the point id of the jth neighbor of the ith particle in the point_set_1.
+        const unsigned int pid = ps_1.neighbor(point_set_1_id, i, j);
+    }
+
+    // Get point set 2 neighbors of point set 1.
+    for (size_t j = 0; j < ps_1.n_neighbors(point_set_2_id, i); ++j)
+    {
+        // Return the point id of the jth neighbor of the ith particle in the point_set_1.
+        const unsigned int pid = ps_1.neighbor(point_set_2_id, i, j);
+    }
 }
 ```
 
@@ -61,7 +65,7 @@ nsearch.z_sort();
 ```
 Please note that the actual reordering must be invoked by the user by
 ```c++
-ps.sort_field(positions.data());
+ps_1.sort_field(positions.data());
 ```
 Assuming that there is additional information stored per-point (e.g. velocity, color, mass etc.) the information **must** also be reorded using the same method to maintain consistency. Subsequently, the ```find_neighbors``` function has to be invoked again to update the neighborhood information.
 
@@ -71,7 +75,8 @@ Another self-explaining (benchmark) [demo](demo/main.cpp) is contained in the pr
 
 When maintaining multiple it is sometimes desired that only certain point sets can find points from other point sets. Therefore an activation table is implemented where the user can specify whether a point set i searches points in another point set j. When nothing else is specified all point sets will search points in all other point sets. The activation table can be modified with e.g.
 ```c++
-nsearch.set_active(i, j, false)
+// Point set 2 will not look for neighbors within its own points
+nsearch.set_active(point_set_2_id, point_set_2_id, false)
 ```
 
 ## References
