@@ -45,6 +45,11 @@ endif ()
 
 target_include_directories(CompactNSearch PUBLIC include)
 
+if (APPLE AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	find_package(oneDPL REQUIRED)
+	target_link_libraries(CompactNSearch PUBLIC oneDPL)
+endif()
+
 install(FILES "include/CompactNSearch" ${HEADER_FILES}
 	DESTINATION include/)
 

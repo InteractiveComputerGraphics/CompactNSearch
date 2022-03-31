@@ -236,6 +236,8 @@ NeighborhoodSearch::update_point_sets()
 	// Precompute cell indices.
 #ifdef _MSC_VER
 	concurrency::parallel_for_each
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each
 #else
 	__gnu_parallel::for_each
 #endif
@@ -315,6 +317,8 @@ NeighborhoodSearch::erase_empty_entries(std::vector<unsigned int> const& to_dele
 	// Perform neighborhood search.
 #ifdef _MSC_VER
 	concurrency::parallel_for_each
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each
 #else
 	__gnu_parallel::for_each
 #endif
@@ -413,6 +417,8 @@ NeighborhoodSearch::query()
 	// Perform neighborhood search.
 #ifdef _MSC_VER
 	concurrency::parallel_for_each
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each
 #else
 	__gnu_parallel::for_each
 #endif
@@ -473,6 +479,8 @@ NeighborhoodSearch::query()
 
 #ifdef _MSC_VER
 	concurrency::parallel_for_each
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each
 #else
 	__gnu_parallel::for_each
 #endif
