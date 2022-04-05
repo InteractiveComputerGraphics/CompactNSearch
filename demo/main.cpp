@@ -152,13 +152,13 @@ void
 advect()
 {
 #ifdef _MSC_VER
-	concurrency::parallel_for_each
+	concurrency::parallel_for_each(
 #elif defined(__APPLE__) && defined(__clang__)
-	std::for_each
+	std::for_each(oneapi::dpl::execution::par,
 #else
-	__gnu_parallel::for_each
+	__gnu_parallel::for_each(
 #endif
-	(positions.begin(), positions.end(), [&](std::array<Real, 3>& x)
+	positions.begin(), positions.end(), [&](std::array<Real, 3>& x)
 	{
 		std::array<Real, 3> v = enright_velocity_field(x);
 		x[0] += static_cast<Real>(0.005) * v[0];
