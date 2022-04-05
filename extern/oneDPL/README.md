@@ -1,0 +1,3 @@
+# oneDPL
+
+When building with Clang on macOS, this project depends on [oneDPL](https://github.com/oneapi-src/oneDPL), which is licensed by its [contributors](https://github.com/oneapi-src/oneDPL/blob/main/CREDITS.txt) under the [Apache License, Version 2.0 with LLVM Exceptions](LICENSE.txt). oneDPL implements the missing Parallel STL algorithms and can, for instance, be [installed](https://formulae.brew.sh/formula/onedpl) using the [Homebrew](https://brew.sh/) package manager.
