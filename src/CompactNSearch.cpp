@@ -235,11 +235,13 @@ NeighborhoodSearch::update_point_sets()
 
 	// Precompute cell indices.
 #ifdef _MSC_VER
-	concurrency::parallel_for_each
+	concurrency::parallel_for_each(
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each(oneapi::dpl::execution::par,
 #else
-	__gnu_parallel::for_each
+	__gnu_parallel::for_each(
 #endif
-	(m_point_sets.begin(), m_point_sets.end(), [&](PointSet& d)
+	m_point_sets.begin(), m_point_sets.end(), [&](PointSet& d)
 	{
 		if (d.is_dynamic()) 
 		{
@@ -314,11 +316,13 @@ NeighborhoodSearch::erase_empty_entries(std::vector<unsigned int> const& to_dele
 
 	// Perform neighborhood search.
 #ifdef _MSC_VER
-	concurrency::parallel_for_each
+	concurrency::parallel_for_each(
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each(oneapi::dpl::execution::par,
 #else
-	__gnu_parallel::for_each
+	__gnu_parallel::for_each(
 #endif
-	(kvps.begin(), kvps.end(), [&](std::pair<HashKey const, unsigned int>* kvp_)
+	kvps.begin(), kvps.end(), [&](std::pair<HashKey const, unsigned int>* kvp_)
 	{
 		auto& kvp = *kvp_;
 
@@ -412,11 +416,13 @@ NeighborhoodSearch::query()
 
 	// Perform neighborhood search.
 #ifdef _MSC_VER
-	concurrency::parallel_for_each
+	concurrency::parallel_for_each(
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each(oneapi::dpl::execution::par,
 #else
-	__gnu_parallel::for_each
+	__gnu_parallel::for_each(
 #endif
-	(kvps.begin(), kvps.end(), [&](std::pair<HashKey const, unsigned int> const* kvp_)
+	kvps.begin(), kvps.end(), [&](std::pair<HashKey const, unsigned int> const* kvp_)
 	{
 		auto const& kvp = *kvp_;
 		HashEntry const& entry = m_entries[kvp.second];
@@ -472,11 +478,13 @@ NeighborhoodSearch::query()
 	std::vector<Spinlock> entry_locks(m_entries.size());
 
 #ifdef _MSC_VER
-	concurrency::parallel_for_each
+	concurrency::parallel_for_each(
+#elif defined(__APPLE__) && defined(__clang__)
+	std::for_each(oneapi::dpl::execution::par,
 #else
-	__gnu_parallel::for_each
+	__gnu_parallel::for_each(
 #endif
-	(kvps.begin(), kvps.end(), [&](std::pair<HashKey const, unsigned int> const* kvp_)
+	kvps.begin(), kvps.end(), [&](std::pair<HashKey const, unsigned int> const* kvp_)
 	{
 		auto const& kvp = *kvp_;
 		HashEntry const& entry = m_entries[kvp.second];
