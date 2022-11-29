@@ -5,7 +5,7 @@ project(CompactNSearch)
 # Visual studio solution directories.
 set_property(GLOBAL PROPERTY USE_FOLDERS on)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (UNIX)
