@@ -167,11 +167,7 @@ PointSet::sort_field(T* lst) const
 
 	std::vector<T> tmp(lst, lst + m_sort_table.size());
 	std::transform(m_sort_table.begin(), m_sort_table.end(), 
-#ifdef _MSC_VER
-		stdext::unchecked_array_iterator<T*>(lst),
-#else
 		lst,
-#endif
 		[&](int i){ return tmp[i]; });
 }
 }
